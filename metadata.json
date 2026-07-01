@@ -1,0 +1,6 @@
+{
+  "name": "Spiegel Business School",
+  "description": "Premium Business School website with student programs, training courses, gallery and contact info.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
