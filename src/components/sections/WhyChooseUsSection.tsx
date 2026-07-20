@@ -31,7 +31,7 @@ export function WhyChooseUsSection() {
   ];
 
   return (
-    <section id="why-us" className="py-24 bg-background relative overflow-hidden">
+    <section id="why-us" className="py-16 md:py-24 bg-background relative overflow-hidden">
       {/* Decorative bg */}
       <div className="absolute top-0 right-0 w-1/3 h-full bg-card -skew-x-12 translate-x-20 -z-10 opacity-50 hidden lg:block" />
       
@@ -44,9 +44,9 @@ export function WhyChooseUsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Why Choose Us?</h2>
+              <h2 className="text-2xl md:text-4xl font-bold mb-4 text-foreground">Why Choose Us?</h2>
               <div className="w-20 h-1.5 bg-primary rounded-full mb-6"></div>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-base md:text-lg text-muted-foreground mb-8">
                 We are committed to providing an exceptional learning experience that empowers you to achieve your personal and professional goals.
               </p>
               <div className="hidden lg:block relative rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">

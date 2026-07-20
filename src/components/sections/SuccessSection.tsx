@@ -27,7 +27,7 @@ export function SuccessSection() {
   ];
 
   return (
-    <section id="success" className="py-24 bg-navy text-white dark:bg-navy-dark relative overflow-hidden">
+    <section id="success" className="py-16 md:py-24 bg-navy text-white dark:bg-navy-dark relative overflow-hidden">
       {/* Decorative patterns */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -46,7 +46,7 @@ export function SuccessSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-4"
+            className="text-2xl md:text-4xl font-bold mb-4"
           >
             Student Success Stories
           </motion.h2>
@@ -61,7 +61,7 @@ export function SuccessSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-white/80"
+            className="text-base md:text-lg text-white/80"
           >
             Don't just take our word for it. Hear from those who have experienced the Spiegel difference.
           </motion.p>
@@ -107,19 +107,19 @@ export function SuccessSection() {
           className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 py-10 border-t border-white/20 text-center"
         >
           <div>
-            <div className="text-4xl font-bold mb-2">500+</div>
+            <div className="text-3xl md:text-4xl font-bold mb-2">500+</div>
             <div className="text-sm text-white/70 uppercase tracking-wider font-medium">Graduates</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">95%</div>
+            <div className="text-3xl md:text-4xl font-bold mb-2">95%</div>
             <div className="text-sm text-white/70 uppercase tracking-wider font-medium">Success Rate</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">50+</div>
+            <div className="text-3xl md:text-4xl font-bold mb-2">50+</div>
             <div className="text-sm text-white/70 uppercase tracking-wider font-medium">Expert Tutors</div>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-2">20+</div>
+            <div className="text-3xl md:text-4xl font-bold mb-2">20+</div>
             <div className="text-sm text-white/70 uppercase tracking-wider font-medium">Active Programs</div>
           </div>
         </motion.div>

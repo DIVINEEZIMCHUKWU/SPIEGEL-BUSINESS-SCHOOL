@@ -36,14 +36,14 @@ export function LearningSection() {
   ];
 
   return (
-    <section className="py-24 bg-background overflow-hidden relative">
+    <section className="py-16 md:py-24 bg-background overflow-hidden relative">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-4 text-foreground"
+            className="text-2xl md:text-4xl font-bold mb-4 text-foreground"
           >
             The Learning Experience
           </motion.h2>
@@ -58,7 +58,7 @@ export function LearningSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-muted-foreground"
+            className="text-base md:text-lg text-muted-foreground"
           >
             We've designed an environment that fosters creativity, critical thinking, and practical application.
           </motion.p>

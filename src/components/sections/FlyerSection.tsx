@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Calendar, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -15,8 +15,24 @@ type Flyer = {
 export function FlyerSection() {
   const [selectedFlyer, setSelectedFlyer] = useState<Flyer | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [flyersData, setFlyersData] = useState<Flyer[]>([]);
 
-  const flyers: Flyer[] = [
+  useEffect(() => {
+    fetch("/api/programs")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setFlyersData(data);
+        } else {
+          setFlyersData(defaultFlyers);
+        }
+      })
+      .catch(() => {
+        setFlyersData(defaultFlyers);
+      });
+  }, []);
+
+  const defaultFlyers: Flyer[] = [
     {
       id: 1,
       title: "Data Analysis Training",
@@ -84,15 +100,15 @@ export function FlyerSection() {
   ];
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === flyers.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === flyersData.length - 1 ? 0 : prev + 1));
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev === 0 ? flyers.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? flyersData.length - 1 : prev - 1));
   };
 
   return (
-    <section id="events" className="py-24 bg-background border-y border-border overflow-hidden">
+    <section id="events" className="py-16 md:py-24 bg-background border-y border-border overflow-hidden">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div>
@@ -100,7 +116,7 @@ export function FlyerSection() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-bold mb-4 text-foreground"
+              className="text-2xl md:text-4xl font-bold mb-4 text-foreground"
             >
               Upcoming Programs & Events
             </motion.h2>
@@ -111,56 +127,40 @@ export function FlyerSection() {
               className="w-20 h-1.5 bg-primary rounded-full"
             ></motion.div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={prevSlide} className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors text-foreground">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button onClick={nextSlide} className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors text-foreground">
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
         </div>
 
-        <div className="relative">
-          <div className="overflow-hidden rounded-2xl">
-            <div 
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {flyersData.map((flyer) => (
+            <motion.div 
+              key={flyer.id}
+              whileHover={{ y: -5 }}
+              className="bg-card rounded-2xl border border-border overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 h-full"
+              onClick={() => setSelectedFlyer(flyer)}
             >
-              {flyers.map((flyer) => (
-                <div key={flyer.id} className="min-w-full md:min-w-[50%] lg:min-w-[33.333%] xl:min-w-[25%] px-4">
-                  <motion.div 
-                    whileHover={{ y: -5 }}
-                    className="bg-card rounded-2xl border border-border overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 h-full"
-                    onClick={() => setSelectedFlyer(flyer)}
-                  >
-                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                      <img 
-                        src={flyer.image} 
-                        alt={flyer.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-4 right-4 bg-white text-navy text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                        {flyer.category}
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/20 to-transparent"></div>
-                      <div className="absolute bottom-0 left-0 w-full p-6 text-white">
-                        <div className="flex items-center gap-2 mb-2 text-white/80 text-sm">
-                          <Calendar className="w-4 h-4" />
-                          <span>{flyer.date}</span>
-                        </div>
-                        <h3 className="font-bold text-lg mb-2">{flyer.title}</h3>
-                        <span className="inline-flex items-center gap-2 text-sm font-medium text-blue-300 group-hover:text-white transition-colors">
-                          View Details <ArrowRight className="w-4 h-4" />
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
+              <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                <img 
+                  src={flyer.image} 
+                  alt={flyer.title} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute top-4 right-4 bg-white text-navy text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                  {flyer.category}
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/20 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 w-full p-6 text-white">
+                  <div className="flex items-center gap-2 mb-2 text-white/80 text-sm">
+                    <Calendar className="w-4 h-4" />
+                    <span>{flyer.date}</span>
+                  </div>
+                  <h3 className="font-bold text-lg mb-2">{flyer.title}</h3>
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-blue-300 group-hover:text-white transition-colors">
+                    View Details <ArrowRight className="w-4 h-4" />
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 

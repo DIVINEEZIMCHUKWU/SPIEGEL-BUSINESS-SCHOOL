@@ -1,27 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ZoomIn } from "lucide-react";
 
 export function GallerySection() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [galleryData, setGalleryData] = useState<any[]>([]);
 
-  const images = [
-    { src: "https://i.ibb.co/nN6GRvpR/1119707526127202818.jpg", alt: "Training sessions", class: "md:col-span-2 md:row-span-2" },
-    { src: "https://i.ibb.co/HDBP678Z/1019924646848076011.jpg", alt: "Holiday lessons", class: "" },
-    { src: "https://i.ibb.co/C54jPp11/dddd.jpg", alt: "Computer classes", class: "" },
-    { src: "https://i.ibb.co/0psvNNL1/ppppp.jpg", alt: "Workshops", class: "md:col-span-2" },
-    { src: "https://i.ibb.co/ZzNP8ZyB/Akilah.jpg", alt: "Graduations", class: "" },
-  ];
+  useEffect(() => {
+    fetch("/api/gallery?t=" + Date.now())
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setGalleryData(data.map((item: any) => ({
+            src: item.url,
+            alt: item.title,
+            type: item.type,
+            class: ""
+          })));
+        }
+      })
+      .catch(() => {
+        // Handle error if needed
+      });
+  }, []);
 
   return (
-    <section id="gallery" className="py-24 bg-card">
+    <section id="gallery" className="py-16 md:py-24 bg-card">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-4 text-foreground"
+            className="text-2xl md:text-4xl font-bold mb-4 text-foreground"
           >
             Life At Spiegel Business School
           </motion.h2>
@@ -34,7 +45,7 @@ export function GallerySection() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px]">
-          {images.map((img, idx) => (
+          {galleryData.map((img, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -42,13 +53,28 @@ export function GallerySection() {
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
               className={`relative rounded-xl overflow-hidden group cursor-pointer ${img.class}`}
-              onClick={() => setSelectedImage(img.src)}
+              onClick={() => {
+                if (img.type === 'video') {
+                  window.open(img.src, '_blank');
+                } else {
+                  setSelectedImage(img.src);
+                }
+              }}
             >
-              <img 
-                src={img.src} 
-                alt={img.alt} 
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              />
+              {img.type === 'video' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-black/80">
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2">
+                    <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-white border-b-8 border-b-transparent ml-1"></div>
+                  </div>
+                  <span className="text-white font-medium text-sm text-center px-4">{img.alt}</span>
+                </div>
+              ) : (
+                <img 
+                  src={img.src} 
+                  alt={img.alt} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+              )}
               <div className="absolute inset-0 bg-navy/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <ZoomIn className="text-white w-10 h-10 transform scale-50 group-hover:scale-100 transition-transform duration-300" />
                 <div className="absolute bottom-4 left-4 text-white font-medium transform translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">

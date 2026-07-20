@@ -7,7 +7,7 @@ export function AboutSection() {
   ];
 
   return (
-    <section id="about" className="py-24 bg-background">
+    <section id="about" className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
@@ -19,9 +19,9 @@ export function AboutSection() {
             className="space-y-8"
           >
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">About Us</h2>
+              <h2 className="text-2xl md:text-4xl font-bold mb-4 text-foreground">About Us</h2>
               <div className="w-20 h-1.5 bg-primary rounded-full mb-6"></div>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">SPIEGEL BUSINESS SCHOOL</strong> will provide innovative, future-focused, and comprehensive education for students in Grades 1–12. In its initial phase, the school will focus exclusively on Grades 9–12 to establish academic excellence and operational standards, with a strategic plan to expand across the full K–12 spectrum in subsequent years.
               </p>
             </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -5,29 +6,54 @@ import { useForm } from "react-hook-form";
 type ContactFormData = {
   name: string;
   email: string;
+  phone: string;
   subject: string;
+  course_interest: string;
   message: string;
 };
 
 export function ContactSection() {
-  const { register, handleSubmit, reset, formState: { isSubmitting, isSubmitSuccessful } } = useForm<ContactFormData>();
+  const { register, handleSubmit, reset, formState: { isSubmitting, isSubmitSuccessful, errors } } = useForm<ContactFormData>();
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const onSubmit = async (data: ContactFormData) => {
-    // In a real app, this would send to Supabase or an API
-    console.log(data);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    reset();
+    setSubmitStatus("submitting");
+    setErrorMessage("");
+
+    try {
+      // Send to our backend API, which will both save it and forward to FormSubmit
+      const res = await fetch('/api/enquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to submit enquiry');
+      }
+
+      // Show success
+      setSubmitStatus("success");
+      reset();
+    } catch (error: any) {
+      console.error("Submission error:", error);
+      setSubmitStatus("error");
+      setErrorMessage(error.message || "An unexpected error occurred.");
+    }
   };
 
   return (
-    <section id="contact" className="py-24 bg-card">
+    <section id="contact" className="py-16 md:py-24 bg-card">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-4 text-foreground"
+            className="text-2xl md:text-4xl font-bold mb-4 text-foreground"
           >
             Contact Us
           </motion.h2>
@@ -42,7 +68,7 @@ export function ContactSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-muted-foreground"
+            className="text-base md:text-lg text-muted-foreground"
           >
             Have questions? We'd love to hear from you. Visit our campus, give us a call, or send us a message.
           </motion.p>
@@ -113,41 +139,85 @@ export function ContactSection() {
           >
             <h3 className="text-2xl font-bold mb-6 text-foreground">Send a Message</h3>
             
-            {isSubmitSuccessful ? (
+            {submitStatus === "success" ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-12">
                 <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                   <Send className="w-8 h-8" />
                 </div>
                 <h4 className="text-xl font-bold mb-2 text-foreground">Message Sent!</h4>
-                <p className="text-muted-foreground">Thank you for reaching out. We will get back to you shortly.</p>
+                <p className="text-muted-foreground">Thank you for contacting Spiegel Business School. Your enquiry has been received successfully. A member of our team will contact you shortly.</p>
                 <button 
-                  onClick={() => reset()}
+                  onClick={() => setSubmitStatus("idle")}
                   className="mt-6 px-6 py-2 border border-border rounded-lg hover:bg-muted text-sm font-medium"
                 >
-                  Send Another
+                  Send Another Enquiry
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">Full Name</label>
-                  <input 
-                    {...register("name", { required: true })}
-                    type="text" 
-                    id="name" 
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
-                    placeholder="Chioma Terry"
-                  />
+                {submitStatus === "error" && (
+                  <div className="p-3 bg-red-100 text-red-700 text-sm rounded-lg mb-4">
+                    {errorMessage}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">Full Name</label>
+                    <input 
+                      {...register("name", { required: true })}
+                      type="text" 
+                      id="name" 
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
+                      placeholder="Chioma Terry"
+                    />
+                    {errors.name && <span className="text-xs text-red-500">Name is required</span>}
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Email Address</label>
+                    <input 
+                      {...register("email", { required: true, pattern: /^\S+@\S+$/i })}
+                      type="email" 
+                      id="email" 
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
+                      placeholder="chioma@example.com"
+                    />
+                    {errors.email && <span className="text-xs text-red-500">Valid email is required</span>}
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Email Address</label>
-                  <input 
-                    {...register("email", { required: true })}
-                    type="email" 
-                    id="email" 
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
-                    placeholder="chioma@example.com"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-1">Phone Number</label>
+                    <input 
+                      {...register("phone")}
+                      type="tel" 
+                      id="phone" 
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
+                      placeholder="+234..."
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="course_interest" className="block text-sm font-medium text-foreground mb-1">Course Interest</label>
+                    <select 
+                      {...register("course_interest")}
+                      id="course_interest" 
+                      className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
+                    >
+                      <option value="">Select a Course</option>
+                      <option value="Accounting & Financial Management">Accounting & Financial Management</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Economics & Analytics">Economics & Analytics</option>
+                      <option value="Management & Organizational Behavior">Management & Organizational Behavior</option>
+                      <option value="Operations Management">Operations Management</option>
+                      <option value="Business Law & Ethics">Business Law & Ethics</option>
+                      <option value="Business Communication">Business Communication</option>
+                      <option value="Data Analysis">Data Analysis</option>
+                      <option value="Digital Marketing">Digital Marketing</option>
+                      <option value="Business Management">Business Management</option>
+                      <option value="UI/UX Design">UI/UX Design</option>
+                      <option value="Web Development">Web Development</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-1">Subject</label>
@@ -158,6 +228,7 @@ export function ContactSection() {
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-foreground"
                     placeholder="How can we help?"
                   />
+                  {errors.subject && <span className="text-xs text-red-500">Subject is required</span>}
                 </div>
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-foreground mb-1">Message</label>
@@ -168,13 +239,14 @@ export function ContactSection() {
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none text-foreground"
                     placeholder="Type your message here..."
                   ></textarea>
+                  {errors.message && <span className="text-xs text-red-500">Message is required</span>}
                 </div>
                 <button 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={submitStatus === "submitting"}
                   className="w-full py-4 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? (
+                  {submitStatus === "submitting" ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                   ) : (
                     <>Send Message <Send className="w-4 h-4" /></>

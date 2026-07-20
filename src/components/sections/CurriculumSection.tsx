@@ -45,14 +45,14 @@ export function CurriculumSection() {
   ];
 
   return (
-    <section className="py-24 bg-background">
+    <section className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-4xl mx-auto mb-16">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-4 text-foreground"
+            className="text-2xl md:text-4xl font-bold mb-4 text-foreground"
           >
             Academic Curriculum Overview
           </motion.h2>
@@ -67,7 +67,7 @@ export function CurriculumSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-muted-foreground leading-relaxed"
+            className="text-base md:text-lg text-muted-foreground leading-relaxed"
           >
             SPIEGEL BUSINESS SCHOOL offers a comprehensive and rigorous business curriculum designed to provide students with foundational knowledge and opportunities for specialization in key functional areas.
           </motion.p>
@@ -117,7 +117,7 @@ export function CurriculumSection() {
               <BookOpen className="text-primary w-6 h-6" /> Business Communication
             </h3>
             <div className="bg-card rounded-xl p-8 border border-border h-[calc(100%-4rem)]">
-              <h4 className="text-lg font-semibold mb-2 text-foreground">Business Communication & Professional Skills</h4>
+              <h4 className="text-base md:text-lg font-semibold mb-2 text-foreground">Business Communication & Professional Skills</h4>
               <p className="text-muted-foreground leading-relaxed">
                 Development of advanced written and verbal communication competencies, including professional presentations, report writing, and negotiation strategies.
               </p>
