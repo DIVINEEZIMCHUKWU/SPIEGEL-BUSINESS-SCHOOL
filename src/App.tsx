@@ -12,6 +12,7 @@ import { ProgramsPage } from "./pages/ProgramsPage";
 import { WhyUsPage } from "./pages/WhyUsPage";
 import { GalleryPage } from "./pages/GalleryPage";
 import { ContactPage } from "./pages/ContactPage";
+import { LogisticsPage } from "./pages/LogisticsPage";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/why-us" element={<WhyUsPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/logistics" element={<LogisticsPage />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
         </Routes>
       </BrowserRouter>

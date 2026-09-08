@@ -358,7 +358,7 @@ export function AdminDashboard() {
           <h1 className="text-base md:text-lg font-bold capitalize text-foreground">{activeTab.replace('-', ' ')}</h1>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <a href="/" target="_blank" className="text-sm font-medium hover:underline text-primary">View Site</a>
+            <Link to="/" className="text-sm font-medium hover:underline text-primary">View Site</Link>
           </div>
         </header>
 

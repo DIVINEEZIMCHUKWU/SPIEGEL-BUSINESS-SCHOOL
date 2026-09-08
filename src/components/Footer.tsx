@@ -43,6 +43,7 @@ export function Footer() {
                 { name: 'Programs', path: '/programs' },
                 { name: 'Why Choose Us', path: '/why-us' },
                 { name: 'Gallery', path: '/gallery' },
+                { name: 'Logistics', path: '/logistics' },
                 { name: 'Contact', path: '/contact' }
               ].map((link) => (
                 <li key={link.name}>
