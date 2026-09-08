@@ -120,7 +120,7 @@ async function startServer() {
       if (error) {
         return res.json([...localGallery].reverse());
       }
-      res.json(data);
+      res.json(data && data.length > 0 ? data : [...localGallery].reverse());
     } else {
       res.json([...localGallery].reverse());
     }

@@ -2,15 +2,23 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ZoomIn } from "lucide-react";
 
+const defaultGallery = [
+  { src: "https://i.ibb.co/nN6GRvpR/1119707526127202818.jpg", alt: "Training sessions", type: "image", class: "md:col-span-2 md:row-span-2" },
+  { src: "https://i.ibb.co/HDBP678Z/1019924646848076011.jpg", alt: "Holiday lessons", type: "image", class: "" },
+  { src: "https://i.ibb.co/C54jPp11/dddd.jpg", alt: "Computer classes", type: "image", class: "" },
+  { src: "https://i.ibb.co/0psvNNL1/ppppp.jpg", alt: "Workshops", type: "image", class: "md:col-span-2" },
+  { src: "https://i.ibb.co/ZzNP8ZyB/Akilah.jpg", alt: "Graduations", type: "image", class: "" },
+];
+
 export function GallerySection() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [galleryData, setGalleryData] = useState<any[]>([]);
+  const [galleryData, setGalleryData] = useState(defaultGallery);
 
   useEffect(() => {
     fetch("/api/gallery?t=" + Date.now())
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           setGalleryData(data.map((item: any) => ({
             src: item.url,
             alt: item.title,
@@ -20,7 +28,7 @@ export function GallerySection() {
         }
       })
       .catch(() => {
-        // Handle error if needed
+        // Keep the built-in gallery available when the API is unavailable.
       });
   }, []);
 

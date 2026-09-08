@@ -12,92 +12,96 @@ type Flyer = {
   description: string;
 };
 
+const defaultFlyers: Flyer[] = [
+  {
+    id: 1,
+    title: "WAEC, JAMB & GCE Post-UTME Lessons",
+    date: "Registration Ongoing",
+    image: "https://i.ibb.co/whpbF6H8/IMG-20260627-WA0053.jpg",
+    category: "Academic Lessons",
+    description: "Focused post-UTME preparation for WAEC, JAMB, and GCE candidates, with structured lessons designed to strengthen subject knowledge and exam readiness."
+  },
+  {
+    id: 2,
+    title: "Basic Computer Training",
+    date: "Registration Open",
+    image: "https://i.ibb.co/DHdZb9cR/IMG-20260627-WA0054.jpg",
+    category: "Technology",
+    description: "Practical computer training covering Microsoft Office and productivity packages, computer literacy, front-end web design, back-end development, programming, kids coding, animation, digital marketing, mobile apps, and computer-aided design."
+  },
+  {
+    id: 3,
+    title: "3-in-1 Certificate Courses in Human Resources",
+    date: "Registration Open",
+    image: "https://i.ibb.co/B5D6ph4h/IMG-20260627-WA0055.jpg",
+    category: "Human Resources",
+    description: "A three-part Human Resources certification pathway offering Associate Membership, a Postgraduate Diploma in Human Resources Management, and Certified Human Resources Manager certification."
+  },
+  {
+    id: 4,
+    title: "CIPM Induction & Investiture Ceremony",
+    date: "Prestigious Event",
+    image: "https://i.ibb.co/S4V9qTMK/IMG-20260627-WA0056.jpg",
+    category: "Professional Event",
+    description: "A Chartered Institute of Personnel Management ceremony celebrating new members and inductees across Associate, Fellow, Doctoral Fellow, Senior Fellow, and Platinum Fellow grades."
+  },
+  {
+    id: 5,
+    title: "Basic Computer Training",
+    date: "Registration Open",
+    image: "https://i.ibb.co/1GbJctHr/IMG-20260627-WA0057.jpg",
+    category: "Technology",
+    description: "Build essential digital skills through training in Microsoft Office, computer literacy, office productivity, front-end web design, back-end development, programming, coding clubs, animation, digital marketing, mobile apps, and computer-aided design."
+  },
+  {
+    id: 6,
+    title: "3-in-1 Logistics & Supply Chain Certification",
+    date: "Registration Open",
+    image: "https://i.ibb.co/mr9gDyXt/IMG-20260627-WA0058.jpg",
+    category: "Logistics & Supply Chain",
+    description: "A Chartered Institute of Supply Chain Management certification pathway combining Associate Membership, Associate Membership of the Chartered Institute of Warehouse Management, and a Postgraduate Diploma."
+  },
+  {
+    id: 7,
+    title: "3-in-1 Customer Relations Certification",
+    date: "Registration Open",
+    image: "https://i.ibb.co/G3dJfVgn/IMG-20260627-WA0059.jpg",
+    category: "Customer Relations",
+    description: "Professional customer-relations training leading to Associate Membership, a Postgraduate Diploma in Customer Relationship Management, and Certified Customer Services Professional certification."
+  },
+  {
+    id: 8,
+    title: "Business Science, Arts & Technology Programs",
+    date: "Applications Open",
+    image: "https://i.ibb.co/6cR7F03g/IMG-20260627-WA0041.jpg",
+    category: "Business School",
+    description: "Apply for MBA and executive programs, workshops, cutting-edge curriculum, networking opportunities, expert faculty and mentors, holiday lessons, adult education, and ICT services including rendering scholarships and academic application support."
+  }
+];
+
 export function FlyerSection() {
   const [selectedFlyer, setSelectedFlyer] = useState<Flyer | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [flyersData, setFlyersData] = useState<Flyer[]>([]);
+  const [flyersData, setFlyersData] = useState<Flyer[]>(defaultFlyers);
 
   useEffect(() => {
     fetch("/api/programs")
       .then(res => res.json())
       .then(data => {
-        if (data && data.length > 0) {
-          setFlyersData(data);
-        } else {
-          setFlyersData(defaultFlyers);
+        if (Array.isArray(data)) {
+          const managedFlyers = new Map(
+            data.map((flyer: Flyer) => [flyer.image, flyer])
+          );
+          setFlyersData(defaultFlyers.map(flyer => ({
+            ...flyer,
+            ...(managedFlyers.get(flyer.image) || {})
+          })));
         }
       })
       .catch(() => {
-        setFlyersData(defaultFlyers);
+        // Keep the built-in flyer catalogue available when the API is offline.
       });
   }, []);
-
-  const defaultFlyers: Flyer[] = [
-    {
-      id: 1,
-      title: "Data Analysis Training",
-      date: "Upcoming",
-      image: "https://i.ibb.co/whpbF6H8/IMG-20260627-WA0053.jpg",
-      category: "Computer Training",
-      description: "Master the art of data analysis. Learn to collect, process, and analyze data to extract meaningful insights using modern tools and techniques."
-    },
-    {
-      id: 2,
-      title: "Digital Marketing Skills",
-      date: "Enrolling Now",
-      image: "https://i.ibb.co/DHdZb9cR/IMG-20260627-WA0054.jpg",
-      category: "Professional Skills",
-      description: "Comprehensive digital marketing training covering SEO, social media marketing, content strategy, and email marketing. Elevate your brand online."
-    },
-    {
-      id: 3,
-      title: "Business Management",
-      date: "Upcoming",
-      image: "https://i.ibb.co/B5D6ph4h/IMG-20260627-WA0055.jpg",
-      category: "Business",
-      description: "Learn essential business management principles, leadership strategies, and organizational behavior to drive business growth and success."
-    },
-    {
-      id: 4,
-      title: "Holiday Lessons Academy",
-      date: "Summer Holiday",
-      image: "https://i.ibb.co/S4V9qTMK/IMG-20260627-WA0056.jpg",
-      category: "Academic",
-      description: "Engaging and structured holiday lessons for students. Keep young minds active and prepare them for the upcoming academic session."
-    },
-    {
-      id: 5,
-      title: "UI/UX Design Masterclass",
-      date: "Enrolling Now",
-      image: "https://i.ibb.co/1GbJctHr/IMG-20260627-WA0057.jpg",
-      category: "Computer Training",
-      description: "Dive into user interface and user experience design. Learn design thinking, wireframing, prototyping, and modern design tools."
-    },
-    {
-      id: 6,
-      title: "Website Development",
-      date: "Upcoming",
-      image: "https://i.ibb.co/mr9gDyXt/IMG-20260627-WA0058.jpg",
-      category: "Computer Training",
-      description: "Build responsive and dynamic websites from scratch. Covering HTML, CSS, JavaScript, and modern web frameworks."
-    },
-    {
-      id: 7,
-      title: "Leadership Development",
-      date: "Enrolling Now",
-      image: "https://i.ibb.co/G3dJfVgn/IMG-20260627-WA0059.jpg",
-      category: "Business",
-      description: "Develop crucial leadership skills, emotional intelligence, and team management strategies to lead with confidence."
-    },
-    {
-      id: 8,
-      title: "AI Tools Workshop",
-      date: "Special Event",
-      image: "https://i.ibb.co/6cR7F03g/IMG-20260627-WA0041.jpg",
-      category: "Workshop",
-      description: "Hands-on workshop exploring the latest AI tools and how to integrate them into your workflow for increased productivity."
-    }
-  ];
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev === flyersData.length - 1 ? 0 : prev + 1));
