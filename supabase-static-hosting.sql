@@ -23,6 +23,10 @@ drop policy if exists "Public can insert enquiries" on public.enquiries;
 create policy "Public can insert enquiries"
 on public.enquiries for insert to anon, authenticated with check (true);
 
+drop policy if exists "Public can read enquiries" on public.enquiries;
+create policy "Public can read enquiries"
+on public.enquiries for select to anon, authenticated using (true);
+
 -- The dashboard uses the anon key for its static-hosting login and management.
 drop policy if exists "Public can read admin settings" on public.admin_settings;
 create policy "Public can read admin settings"

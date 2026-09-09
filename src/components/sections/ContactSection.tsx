@@ -141,6 +141,7 @@ export function ContactSection() {
           </motion.div>
 
           {/* Contact Form */}
+          <iframe name="formsubmit-frame" title="Form submission" className="hidden" aria-hidden="true" />
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
