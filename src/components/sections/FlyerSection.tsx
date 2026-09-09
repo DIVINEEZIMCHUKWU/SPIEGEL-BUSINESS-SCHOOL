@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Calendar, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
 
 type Flyer = {
   id: number;
@@ -85,20 +86,18 @@ export function FlyerSection() {
   const [flyersData, setFlyersData] = useState<Flyer[]>(defaultFlyers);
 
   useEffect(() => {
-    fetch("/api/programs")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const managedFlyers = new Map(
-            data.map((flyer: Flyer) => [flyer.image, flyer])
-          );
-          setFlyersData(defaultFlyers.map(flyer => ({
-            ...flyer,
-            ...(managedFlyers.get(flyer.image) || {})
-          })));
+    Promise.resolve(supabase.from("programs").select("*").order("created_at", { ascending: false }))
+      .then(({ data, error }) => {
+        if (!error && data) {
+          const databaseFlyers = data as Flyer[];
+          const databaseImages = new Set(databaseFlyers.map((flyer) => flyer.image));
+          setFlyersData([
+            ...databaseFlyers,
+            ...defaultFlyers.filter((flyer) => !databaseImages.has(flyer.image))
+          ]);
         }
       })
-      .catch(() => {
+        .catch(() => {
         // Keep the built-in flyer catalogue available when the API is offline.
       });
   }, []);

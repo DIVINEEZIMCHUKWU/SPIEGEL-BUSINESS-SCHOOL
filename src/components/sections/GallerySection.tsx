@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ZoomIn } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 const defaultGallery = [
   { src: "https://i.ibb.co/nN6GRvpR/1119707526127202818.jpg", alt: "Training sessions", type: "image", class: "md:col-span-2 md:row-span-2" },
@@ -15,10 +16,9 @@ export function GallerySection() {
   const [galleryData, setGalleryData] = useState(defaultGallery);
 
   useEffect(() => {
-    fetch("/api/gallery?t=" + Date.now())
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
+    Promise.resolve(supabase.from("gallery").select("*").order("created_at", { ascending: false }))
+      .then(({ data, error }) => {
+        if (!error && data) {
           setGalleryData(data.map((item: any) => ({
             src: item.url,
             alt: item.title,

@@ -48,6 +48,26 @@ export function LogisticsPage() {
           </div>
         </div>
 
+        <section className="py-10 md:py-16 bg-background" aria-label="Logistics services">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 items-start">
+              {[
+                ["https://i.ibb.co/Kx1PbxGc/Birmingham-Same-Day-Delivery.jpg", "Same-day delivery", "md:translate-y-4 md:-rotate-2"],
+                ["https://i.ibb.co/JWYmpLzt/Express-service-delivery-man-in-blue-uniform-rides-motorbike-swiftly-AI-Generated.jpg", "Express courier service", "md:-translate-y-2 md:rotate-2"],
+                ["https://i.ibb.co/chhTNCNV/World-wide-cargo-transport-concept-3d-rendering-Premium-Photo.jpg", "Worldwide cargo transport", "md:translate-y-6 md:-rotate-1"],
+                ["https://i.ibb.co/YB0hBwfv/Shippings.jpg", "Shipping solutions", "md:-translate-y-3 md:rotate-2"],
+                ["https://i.ibb.co/xt58ysjj/Best-Logistics-Companies-in-India-Efficient-Supply-Chain-Transportation-Services.jpg", "Supply chain delivery", "md:translate-y-3 md:-rotate-2"],
+                ["https://i.ibb.co/2YqYnGxy/Shipping-or-other-fees-1-EUR-1-Piece.jpg", "Shipping fees and delivery", "md:-translate-y-1 md:rotate-1"]
+              ].map(([src, alt, transform]) => (
+                <figure key={src} className={`group overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-transform duration-500 hover:-translate-y-2 hover:rotate-0 ${transform}`}>
+                  <img src={src} alt={alt} loading="lazy" className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <figcaption className="p-3 text-sm font-semibold text-foreground">{alt}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 md:px-6">
             <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">

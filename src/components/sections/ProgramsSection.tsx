@@ -2,19 +2,17 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { BookOpen, Laptop, Briefcase, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
 
 export function ProgramsSection() {
   const [programsData, setProgramsData] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/programs?t=" + Date.now())
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setProgramsData(data);
-        }
+    Promise.resolve(supabase.from("programs").select("*").order("created_at", { ascending: false }))
+      .then(({ data, error }) => {
+        if (!error && data) setProgramsData(data);
       })
-      .catch(() => {
+        .catch(() => {
         // Handle error if needed
       });
   }, []);
@@ -46,6 +44,8 @@ export function ProgramsSection() {
     }
   ];
 
+  const displayedPrograms = programsData.length > 0 ? programsData : defaultPrograms;
+
   return (
     <section id="programs" className="py-16 md:py-24 bg-card">
       <div className="container mx-auto px-4 md:px-6">
@@ -76,7 +76,7 @@ export function ProgramsSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {programsData.map((program, idx) => {
+          {displayedPrograms.map((program, idx) => {
             const Icon = program.icon || GraduationCap;
             return (
               <motion.div

@@ -5,22 +5,39 @@ import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
+  app.set("trust proxy", 1);
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   app.use(cookieParser());
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Spiegel123";
   const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_do_not_use_in_prod";
+  const FORM_SUBMIT_EMAIL = "spiegelbusinessschool@gmail.com";
   // Set up Supabase
   let supabaseUrl = process.env.SUPABASE_URL || "";
   supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, "");
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  let supabase: ReturnType<typeof createClient> | null = null;
+  let supabase: any = null;
   if (supabaseUrl && supabaseServiceKey) {
     supabase = createClient(supabaseUrl, supabaseServiceKey);
   }
+  console.log(`Supabase configuration: ${supabase ? "available" : "missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"}`);
+  app.get("/api/health", async (_req, res) => {
+    if (!supabase) {
+      return res.status(503).json({ ok: false, database: "not_configured" });
+    }
+    const { error } = await supabase.from("gallery").select("id").limit(1);
+    if (error) {
+      return res.status(503).json({ ok: false, database: "unreachable" });
+    }
+    res.json({ ok: true, database: "connected" });
+  });
   // Auth Middleware
   const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const token = req.cookies.admin_token;
@@ -44,14 +61,16 @@ async function startServer() {
     }
     if (password === currentPassword) {
       const token = jwt.sign({ admin: true }, JWT_SECRET, { expiresIn: '1d' });
-      res.cookie('admin_token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: 'none', secure: true });
+      const isSecure = req.protocol === 'https';
+      res.cookie('admin_token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: isSecure ? 'none' : 'lax', secure: isSecure });
       res.json({ success: true });
     } else {
       res.status(401).json({ error: "Invalid password" });
     }
   });
   app.post("/api/logout", (req, res) => {
-    res.clearCookie('admin_token', { httpOnly: true, sameSite: 'none', secure: true });
+    const isSecure = req.protocol === 'https';
+    res.clearCookie('admin_token', { httpOnly: true, sameSite: isSecure ? 'none' : 'lax', secure: isSecure });
     res.json({ success: true });
   });
   app.get("/api/check-auth", authMiddleware, (req, res) => {
@@ -145,8 +164,7 @@ async function startServer() {
     if (supabase) {
       const { error } = await supabase.from('gallery').delete().eq('id', id);
       if (error) {
-        localGallery = localGallery.filter(item => item.id !== id);
-        return res.json({ success: true });
+        return res.status(500).json({ error: error.message });
       }
       res.json({ success: true });
     } else {
@@ -215,8 +233,8 @@ async function startServer() {
       <body style="font-family: sans-serif; padding: 40px; text-align: center;">
         <h2>Activate FormSubmit</h2>
         <p>Submit this standard form to trigger a fresh activation email from FormSubmit.</p>
-        <form action="https://formsubmit.co/spiegelbusinessschool@gmail.com" method="POST">
-          <input type="email" name="email" value="spiegelbusinessschool@gmail.com" required style="padding: 10px; width: 300px; margin-bottom: 20px;">
+        <form action="https://formsubmit.co/${FORM_SUBMIT_EMAIL}" method="POST">
+          <input type="email" name="email" value="${FORM_SUBMIT_EMAIL}" required style="padding: 10px; width: 300px; margin-bottom: 20px;">
           <br>
           <button type="submit" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer;">Send Activation Request</button>
         </form>
@@ -257,11 +275,12 @@ async function startServer() {
       });
     }
 
-    // Forward to FormSubmit
+    // Forward to FormSubmit after saving the enquiry.
     try {
       const formSubmitData = new URLSearchParams();
       formSubmitData.append("name", name || "");
       formSubmitData.append("email", email || "");
+      formSubmitData.append("_replyto", email || "");
       formSubmitData.append("phone", phone || "");
       formSubmitData.append("course_interest", course_interest || "");
       formSubmitData.append("subject", subject || "");
@@ -270,22 +289,35 @@ async function startServer() {
       formSubmitData.append("_captcha", "false");
       formSubmitData.append("_template", "table");
 
-      const resSubmit = await fetch("https://formsubmit.co/ajax/spiegelbusinessschool@gmail.com", {
+      const resSubmit = await fetch(`https://formsubmit.co/ajax/${FORM_SUBMIT_EMAIL}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Referer": "https://spiegelbusiness.com",
-          "Origin": "https://spiegelbusiness.com",
-          "User-Agent": "Spiegel-Backend/1.0"
+          "Accept": "application/json"
         },
         body: formSubmitData.toString(),
       });
-      const submitData = await resSubmit.json();
-      if (submitData.success !== "true" && submitData.success !== true) {
-         console.warn("FormSubmit Warning:", submitData);
+      const responseText = await resSubmit.text();
+      let submitData: any = {};
+      try {
+        submitData = JSON.parse(responseText);
+      } catch {
+        submitData = { message: responseText };
+      }
+      const accepted = submitData.success === true || submitData.success === "true";
+      if (!resSubmit.ok || !accepted) {
+        console.error("FormSubmit rejected enquiry:", resSubmit.status, submitData);
+        return res.status(502).json({
+          success: false,
+          error: "The enquiry was saved, but FormSubmit did not accept the email. Please activate the FormSubmit address and try again."
+        });
       }
     } catch (err) {
       console.error("FormSubmit error:", err);
+      return res.status(502).json({
+        success: false,
+        error: "The enquiry was saved, but the email service could not be reached."
+      });
     }
 
     res.json({ success: true });

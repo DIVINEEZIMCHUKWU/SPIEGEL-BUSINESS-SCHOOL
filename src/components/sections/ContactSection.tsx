@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { supabase } from "../../lib/supabase";
 
 type ContactFormData = {
   name: string;
@@ -22,18 +23,27 @@ export function ContactSection() {
     setErrorMessage("");
 
     try {
-      // Send to our backend API, which will both save it and forward to FormSubmit
-      const res = await fetch('/api/enquiries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      const { error } = await supabase.from("enquiries").insert(data);
+      if (error) throw error;
+
+      const form = document.createElement("form");
+      form.action = "https://formsubmit.co/spiegelbusinessschool@gmail.com";
+      form.method = "POST";
+      form.target = "formsubmit-frame";
+      form.style.display = "none";
+      Object.entries(data).forEach(([name, value]) => {
+        const input = document.createElement("input");
+        input.name = name;
+        input.value = String(value ?? "");
+        form.appendChild(input);
       });
-      
-      if (!res.ok) {
-        throw new Error('Failed to submit enquiry');
-      }
+      const subject = document.createElement("input");
+      subject.name = "_subject";
+      subject.value = "New Website Enquiry - Spiegel Business School";
+      form.appendChild(subject);
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
 
       // Show success
       setSubmitStatus("success");

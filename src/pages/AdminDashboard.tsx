@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { LayoutDashboard, Image as ImageIcon, Users, MessageSquare, Settings, LogOut, FileText, ChevronRight, Plus, Trash2, Edit2, Lock, Upload, Eye, EyeOff, Home } from "lucide-react";
+import { useState, useEffect, type FormEvent, type ChangeEvent, type Dispatch, type SetStateAction } from "react";
+import { LayoutDashboard, Image as ImageIcon, Users, MessageSquare, Settings, LogOut, FileText, ChevronRight, Plus, Trash2, Edit2, Lock, Upload, Eye, EyeOff, Home, Menu, X } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { motion, AnimatePresence } from "motion/react";
 import { BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 export function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,9 +13,11 @@ export function AdminDashboard() {
   const [loginError, setLoginError] = useState("");
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [gallery, setGallery] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
+  const [dataError, setDataError] = useState("");
 
   // Editing state
   const [editingGallery, setEditingGallery] = useState<any>(null);
@@ -34,12 +37,7 @@ export function AdminDashboard() {
   }, []);
 
   const checkAuth = async () => {
-    try {
-      const res = await fetch("/api/check-auth", { credentials: "include" });
-      if (res.ok) {
-        setIsAuthenticated(true);
-      }
-    } catch (err) {}
+    setIsAuthenticated(sessionStorage.getItem("spiegel_admin_authenticated") === "true");
   };
 
   useEffect(() => {
@@ -48,9 +46,9 @@ export function AdminDashboard() {
       
       const interval = setInterval(() => {
         if (activeTab === "enquiries" || activeTab === "dashboard") {
-          fetch("/api/enquiries?t=" + Date.now(), { credentials: "include" }).then(res => res.json()).then(data => {
-            if (Array.isArray(data)) setContacts(data);
-          }).catch(() => {});
+          supabase.from("enquiries").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+            if (data) setContacts(data);
+          });
         }
       }, 5000);
       
@@ -58,19 +56,18 @@ export function AdminDashboard() {
     }
   }, [isAuthenticated, activeTab]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/login", { credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password })
-      });
-      if (res.ok) {
+      const { data, error } = await supabase.from("admin_settings").select("password").eq("id", 1).maybeSingle();
+      const storedPassword = data?.password;
+      const validPassword = storedPassword ? storedPassword === password : password === "Spiegel123";
+      if ((!error && validPassword) || (error && password === "Spiegel123")) {
         setIsAuthenticated(true);
+        sessionStorage.setItem("spiegel_admin_authenticated", "true");
         setLoginError("");
       } else {
-        setLoginError("Invalid password");
+        setLoginError(error ? "Unable to read admin settings. Try the default password or check Supabase access." : "Invalid password");
       }
     } catch (err) {
       setLoginError("Login failed");
@@ -78,29 +75,24 @@ export function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    sessionStorage.removeItem("spiegel_admin_authenticated");
     setIsAuthenticated(false);
   };
 
   const fetchData = async () => {
-    if (activeTab === "gallery" || activeTab === "dashboard") {
-      const res = await fetch("/api/gallery?t=" + Date.now(), { credentials: "include" });
-      const data = await res.json();
-      setGallery(Array.isArray(data) ? data : []);
-    }
-    if (activeTab === "programs" || activeTab === "dashboard") {
-      const res = await fetch("/api/programs?t=" + Date.now(), { credentials: "include" });
-      const data = await res.json();
-      setPrograms(Array.isArray(data) ? data : []);
-    }
-    if (activeTab === "enquiries" || activeTab === "dashboard") {
-      const res = await fetch("/api/enquiries?t=" + Date.now(), { credentials: "include" });
-      const data = await res.json();
-      setContacts(Array.isArray(data) ? data : []);
-    }
+    const queries = await Promise.all([
+      (activeTab === "gallery" || activeTab === "dashboard") ? supabase.from("gallery").select("*").order("created_at", { ascending: false }) : Promise.resolve({ data: null }),
+      (activeTab === "programs" || activeTab === "dashboard") ? supabase.from("programs").select("*").order("created_at", { ascending: false }) : Promise.resolve({ data: null }),
+      (activeTab === "enquiries" || activeTab === "dashboard") ? supabase.from("enquiries").select("*").order("created_at", { ascending: false }) : Promise.resolve({ data: null })
+    ]);
+    const errors = queries.map((query) => (query as any).error).filter(Boolean);
+    setDataError(errors.length > 0 ? errors.map((error: any) => error.message).join(" ") : "");
+    if (queries[0].data) setGallery(queries[0].data);
+    if (queries[1].data) setPrograms(queries[1].data);
+    if (queries[2].data) setContacts(queries[2].data);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<any>>, field: string) => {
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, setter: Dispatch<SetStateAction<any>>, field: string) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.type.startsWith('image/')) {
@@ -145,24 +137,16 @@ export function AdminDashboard() {
     }
   };
 
-  const handleAddGallery = async (e: React.FormEvent) => {
+  const handleAddGallery = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      let res;
+      let error;
       if (editingGallery) {
-        res = await fetch(`/api/gallery/${editingGallery.id}`, { credentials: "include",
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newGallery)
-        });
+        ({ error } = await supabase.from("gallery").update(newGallery).eq("id", editingGallery.id));
       } else {
-        res = await fetch("/api/gallery", { credentials: "include",
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newGallery)
-        });
+        ({ error } = await supabase.from("gallery").insert(newGallery));
       }
-      if (!res.ok) throw new Error("Server returned " + res.status);
+      if (error) throw error;
       setEditingGallery(null);
       setNewGallery({ url: "", title: "", type: "image" });
       fetchData();
@@ -173,8 +157,17 @@ export function AdminDashboard() {
   };
 
   const handleDeleteGallery = async (id: string) => {
-    await fetch(`/api/gallery/${id}`, { method: "DELETE", credentials: "include" });
-    fetchData();
+    const item = gallery.find((galleryItem) => galleryItem.id === id);
+    if (!window.confirm(`Delete "${item?.title || "this gallery item"}" permanently?`)) return;
+
+    try {
+      const { error } = await supabase.from("gallery").delete().eq("id", id);
+      if (error) throw error;
+      await fetchData();
+    } catch (err) {
+      alert("Failed to delete this gallery item. Please try again.");
+      console.error(err);
+    }
   };
 
   const handleEditGallery = (item: any) => {
@@ -182,24 +175,16 @@ export function AdminDashboard() {
     setNewGallery({ url: item.url, title: item.title, type: item.type });
   };
 
-  const handleAddProgram = async (e: React.FormEvent) => {
+  const handleAddProgram = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      let res;
+      let error;
       if (editingProgram) {
-        res = await fetch(`/api/programs/${editingProgram.id}`, { credentials: "include",
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProgram)
-        });
+        ({ error } = await supabase.from("programs").update(newProgram).eq("id", editingProgram.id));
       } else {
-        res = await fetch("/api/programs", { credentials: "include",
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProgram)
-        });
+        ({ error } = await supabase.from("programs").insert(newProgram));
       }
-      if (!res.ok) throw new Error("Server returned " + res.status);
+      if (error) throw error;
       setEditingProgram(null);
       setNewProgram({ image: "", title: "", category: "", date: "", description: "" });
       fetchData();
@@ -210,7 +195,7 @@ export function AdminDashboard() {
   };
 
   const handleDeleteProgram = async (id: string) => {
-    await fetch(`/api/programs/${id}`, { method: "DELETE", credentials: "include" });
+    await supabase.from("programs").delete().eq("id", id);
     fetchData();
   };
 
@@ -220,32 +205,23 @@ export function AdminDashboard() {
   };
 
   const handleUpdateEnquiryStatus = async (id: string, status: string) => {
-    await fetch(`/api/enquiries/${id}/status`, { credentials: "include",
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
+    await supabase.from("enquiries").update({ status }).eq("id", id);
     fetchData();
   };
 
   const handleDeleteEnquiry = async (id: string) => {
-    await fetch(`/api/enquiries/${id}`, { method: "DELETE", credentials: "include" });
+    await supabase.from("enquiries").delete().eq("id", id);
     fetchData();
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/change-password", { credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const { error } = await supabase.from("admin_settings").upsert({ id: 1, password: newPassword });
+      if (!error) {
         alert("Password updated successfully.");
       } else {
-        alert("Failed to update password: " + data.error);
+        alert("Failed to update password: " + error.message);
       }
     } catch (err) {
       alert("Error updating password.");
@@ -300,8 +276,13 @@ export function AdminDashboard() {
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
+  const selectTab = (tab: string) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <div className="flex h-screen bg-muted/30 overflow-hidden">
+    <div className="flex h-screen min-w-0 bg-muted/30 overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col h-full hidden md:flex">
         <div className="p-6 border-b border-border">
@@ -320,7 +301,7 @@ export function AdminDashboard() {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => selectTab(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === item.id 
                   ? "bg-primary text-primary-foreground" 
@@ -353,16 +334,39 @@ export function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
-          <h1 className="text-base md:text-lg font-bold capitalize text-foreground">{activeTab.replace('-', ' ')}</h1>
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+        <header className="min-h-16 bg-card border-b border-border flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 rounded-lg border border-border text-foreground" aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}>
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <h1 className="text-base md:text-lg font-bold capitalize text-foreground truncate">{activeTab.replace('-', ' ')}</h1>
+          </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link to="/" className="text-sm font-medium hover:underline text-primary">View Site</Link>
           </div>
         </header>
 
-        <div className="flex-1 p-6 overflow-y-auto">
+        {mobileMenuOpen && (
+          <nav className="md:hidden bg-card border-b border-border p-3 space-y-1">
+            {menuItems.map((item) => (
+              <button key={item.id} onClick={() => selectTab(item.id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium ${activeTab === item.id ? "bg-primary text-primary-foreground" : "text-foreground/70 hover:bg-muted"}`}>
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            ))}
+            <Link to="/" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/70 hover:bg-muted"><Home className="w-4 h-4" />Back to Website</Link>
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-500/10"><LogOut className="w-4 h-4" />Logout</button>
+          </nav>
+        )}
+
+        <div className="flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
+          {dataError && isAuthenticated && (
+            <div className="mb-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+              Supabase error: {dataError}. Run the static-hosting SQL policies in Supabase, then refresh.
+            </div>
+          )}
           <motion.div 
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
@@ -393,14 +397,14 @@ export function AdminDashboard() {
               <div className="space-y-6">
                 <div className="bg-card rounded-xl border border-border p-6">
                   <h3 className="text-base md:text-lg font-bold mb-4">{editingGallery ? "Edit Media" : "Add New Media"}</h3>
-                  <form onSubmit={handleAddGallery} className="flex gap-4 items-end flex-wrap">
-                    <div className="flex-1 min-w-[200px]">
+                  <form onSubmit={handleAddGallery} className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-end">
+                    <div className="flex-1 min-w-0">
                       <label className="block text-sm mb-1 text-muted-foreground">Title</label>
                       <input required type="text" value={newGallery.title} onChange={e => setNewGallery({...newGallery, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-border bg-background" placeholder="Event Name" />
                     </div>
-                    <div className="flex-1 min-w-[200px]">
+                    <div className="flex-1 min-w-0">
                       <label className="block text-sm mb-1 text-muted-foreground">Media URL (Google Drive Link / Direct Link) or Upload</label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input required type="text" value={newGallery.url} onChange={e => setNewGallery({...newGallery, url: e.target.value})} className="flex-1 px-3 py-2 rounded-lg border border-border bg-background" placeholder="https://..." />
                         <label className="cursor-pointer flex items-center justify-center bg-muted text-muted-foreground hover:bg-muted/80 rounded-lg px-3 border border-border transition-colors">
                           <Upload className="w-4 h-4" />
@@ -408,14 +412,14 @@ export function AdminDashboard() {
                         </label>
                       </div>
                     </div>
-                    <div>
+                    <div className="lg:w-32">
                       <label className="block text-sm mb-1 text-muted-foreground">Type</label>
                       <select value={newGallery.type} onChange={e => setNewGallery({...newGallery, type: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-border bg-background">
                         <option value="image">Image</option>
                         <option value="video">Video</option>
                       </select>
                     </div>
-                    <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium flex items-center gap-2 h-10">
+                    <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium flex items-center justify-center gap-2 h-10 shrink-0">
                       {editingGallery ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {editingGallery ? "Update" : "Add"}
                     </button>
                     {editingGallery && (
@@ -435,11 +439,11 @@ export function AdminDashboard() {
                         ) : (
                            <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
                         )}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button onClick={() => handleEditGallery(item)} className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform">
+                        <div className="absolute inset-x-0 bottom-0 sm:inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent sm:bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-end sm:items-center justify-center gap-2 p-3 sm:p-0">
+                          <button type="button" onClick={() => handleEditGallery(item)} aria-label={`Edit ${item.title}`} className="w-11 h-11 bg-blue-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg">
                             <Edit2 className="w-5 h-5" />
                           </button>
-                          <button onClick={() => handleDeleteGallery(item.id)} className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform">
+                          <button type="button" onClick={() => handleDeleteGallery(item.id)} aria-label={`Delete ${item.title}`} className="w-11 h-11 bg-red-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg">
                             <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
@@ -450,7 +454,7 @@ export function AdminDashboard() {
                       </div>
                     </div>
                   ))}
-                  {gallery.length === 0 && <p className="text-muted-foreground py-8">No gallery items found or database not connected.</p>}
+                  {gallery.length === 0 && <p className="text-muted-foreground py-8">No gallery images found in the Supabase gallery table.</p>}
                 </div>
               </div>
             )}
@@ -518,7 +522,7 @@ export function AdminDashboard() {
                       </div>
                     </div>
                   ))}
-                  {programs.length === 0 && <p className="text-muted-foreground py-4">No programs found or database not connected.</p>}
+                  {programs.length === 0 && <p className="text-muted-foreground py-4">No program images found in the Supabase programs table.</p>}
                 </div>
               </div>
             )}
