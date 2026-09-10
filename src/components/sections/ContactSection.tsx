@@ -26,24 +26,29 @@ export function ContactSection() {
       const { error } = await supabase.from("enquiries").insert(data);
       if (error) throw error;
 
-      const form = document.createElement("form");
-      form.action = "https://formsubmit.co/spiegelbusinessschool@gmail.com";
-      form.method = "POST";
-      form.target = "formsubmit-frame";
-      form.style.display = "none";
-      Object.entries(data).forEach(([name, value]) => {
+      const emailForm = document.createElement("form");
+      emailForm.method = "POST";
+      emailForm.action = "https://formsubmit.co/spiegelbusinessschool@gmail.com";
+      emailForm.target = "formsubmit-frame";
+      emailForm.style.display = "none";
+
+      const emailFields = {
+        ...data,
+        _replyto: data.email,
+        _subject: "New Website Enquiry - Spiegel Business School",
+        _captcha: "false",
+        _template: "table",
+      };
+      Object.entries(emailFields).forEach(([name, value]) => {
         const input = document.createElement("input");
+        input.type = "hidden";
         input.name = name;
-        input.value = String(value ?? "");
-        form.appendChild(input);
+        input.value = value;
+        emailForm.appendChild(input);
       });
-      const subject = document.createElement("input");
-      subject.name = "_subject";
-      subject.value = "New Website Enquiry - Spiegel Business School";
-      form.appendChild(subject);
-      document.body.appendChild(form);
-      form.submit();
-      form.remove();
+      document.body.appendChild(emailForm);
+      emailForm.submit();
+      window.setTimeout(() => emailForm.remove(), 1000);
 
       // Show success
       setSubmitStatus("success");

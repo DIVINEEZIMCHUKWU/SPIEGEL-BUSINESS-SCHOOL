@@ -52,11 +52,6 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link to="/admin" className="text-white/50 hover:text-white text-sm transition-all mt-4 inline-block">
-                  Admin Login
-                </Link>
-              </li>
             </ul>
           </div>
 

@@ -282,7 +282,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="flex h-screen min-w-0 bg-muted/30 overflow-hidden">
+    <div className="flex h-dvh min-h-screen min-w-0 bg-muted/30 overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col h-full hidden md:flex">
         <div className="p-6 border-b border-border">
@@ -361,7 +361,7 @@ export function AdminDashboard() {
           </nav>
         )}
 
-        <div className="flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 min-w-0 p-3 sm:p-6 overflow-y-auto overflow-x-hidden">
           {dataError && isAuthenticated && (
             <div className="mb-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
               Supabase error: {dataError}. Run the static-hosting SQL policies in Supabase, then refresh.
@@ -395,7 +395,7 @@ export function AdminDashboard() {
 
             {activeTab === 'gallery' && (
               <div className="space-y-6">
-                <div className="bg-card rounded-xl border border-border p-6">
+                <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
                   <h3 className="text-base md:text-lg font-bold mb-4">{editingGallery ? "Edit Media" : "Add New Media"}</h3>
                   <form onSubmit={handleAddGallery} className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-end">
                     <div className="flex-1 min-w-0">
@@ -461,7 +461,7 @@ export function AdminDashboard() {
 
             {activeTab === 'programs' && (
               <div className="space-y-6">
-                <div className="bg-card rounded-xl border border-border p-6">
+                <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
                   <h3 className="text-base md:text-lg font-bold mb-4">{editingProgram ? "Edit Program Flyer" : "Add New Program Flyer"}</h3>
                   <form onSubmit={handleAddProgram} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -570,7 +570,53 @@ export function AdminDashboard() {
                   </select>
                 </div>
 
-                <div className="bg-card rounded-xl border border-border overflow-x-auto shadow-sm">
+                <div className="space-y-3 md:hidden">
+                  {contacts
+                    .filter(c => enquiryFilter === "All" || c.status === enquiryFilter)
+                    .filter(c => {
+                      const s = enquirySearch.toLowerCase(); if (!s) return true;
+                      return (c.name?.toLowerCase().includes(s) || c.email?.toLowerCase().includes(s) || c.phone?.toLowerCase().includes(s));
+                    })
+                    .map((contact: any) => (
+                      <div key={contact.id} className="bg-card rounded-xl border border-border p-4 shadow-sm space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">{contact.name}</p>
+                            <a href={`mailto:${contact.email}`} className="text-sm text-primary break-all">{contact.email}</a>
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(contact.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-1 text-sm">
+                          <p className="text-muted-foreground">Phone: <span className="text-foreground">{contact.phone || '-'}</span></p>
+                          <p className="text-muted-foreground">Interest: <span className="text-foreground">{contact.course_interest || contact.subject}</span></p>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <select
+                            value={contact.status}
+                            onChange={(e) => handleUpdateEnquiryStatus(contact.id, e.target.value)}
+                            className="min-h-10 flex-1 px-2 py-1 rounded-lg text-xs font-semibold border border-border bg-background"
+                          >
+                            <option value="New">New</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="Interested">Interested</option>
+                            <option value="Converted">Converted</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                          <div className="flex gap-2 shrink-0">
+                            <button aria-label="View enquiry" onClick={() => setSelectedEnquiry(contact)} className="min-h-10 min-w-10 p-2 hover:bg-muted rounded-lg text-primary transition-colors">
+                              <BookOpen className="w-4 h-4 mx-auto" />
+                            </button>
+                            <button aria-label="Delete enquiry" onClick={() => handleDeleteEnquiry(contact.id)} className="min-h-10 min-w-10 p-2 hover:bg-red-100 hover:text-red-600 rounded-lg text-muted-foreground transition-colors">
+                              <Trash2 className="w-4 h-4 mx-auto" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  {contacts.length === 0 && <p className="bg-card rounded-xl border border-border p-8 text-center text-muted-foreground">No enquiries found</p>}
+                </div>
+
+                <div className="hidden md:block bg-card rounded-xl border border-border overflow-x-auto shadow-sm">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-border bg-muted/30">
