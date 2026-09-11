@@ -3,7 +3,6 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 
@@ -20,7 +19,7 @@ async function startServer() {
   const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_do_not_use_in_prod";
   const FORM_SUBMIT_EMAIL = "spiegelbusinessschool@gmail.com";
   // Set up Supabase
-  let supabaseUrl = process.env.SUPABASE_URL || "";
+  let supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
   supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, "");
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   let supabase: any = null;
@@ -245,21 +244,16 @@ async function startServer() {
 
   app.post("/api/enquiries", async (req, res) => {
     const { name, email, phone, subject, course_interest, message } = req.body;
+    if (!name || !email || !message) {
+      return res.status(400).json({ success: false, error: "Name, email, and message are required." });
+    }
+
     // Save to DB
     if (supabase) {
       const { error } = await supabase.from('enquiries').insert([{ name, email, phone, subject, course_interest, message }]);
       if (error) {
-        localEnquiries.push({
-          id: String(localEnquiryId++),
-          name,
-          email,
-          phone,
-          subject,
-          course_interest,
-          message,
-          status: 'New',
-          created_at: new Date().toISOString()
-        });
+        console.error("Supabase enquiry insert error:", error);
+        return res.status(500).json({ success: false, error: "Your enquiry could not be saved. Please try again." });
       }
     } else {
       localEnquiries.push({

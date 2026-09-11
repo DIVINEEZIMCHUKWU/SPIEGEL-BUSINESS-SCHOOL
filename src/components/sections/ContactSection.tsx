@@ -23,32 +23,44 @@ export function ContactSection() {
     setErrorMessage("");
 
     try {
-      const { error } = await supabase.from("enquiries").insert(data);
-      if (error) throw error;
-
-      const emailForm = document.createElement("form");
-      emailForm.method = "POST";
-      emailForm.action = "https://formsubmit.co/spiegelbusinessschool@gmail.com";
-      emailForm.target = "formsubmit-frame";
-      emailForm.style.display = "none";
-
-      const emailFields = {
-        ...data,
-        _replyto: data.email,
-        _subject: "New Website Enquiry - Spiegel Business School",
-        _captcha: "false",
-        _template: "table",
-      };
-      Object.entries(emailFields).forEach(([name, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = name;
-        input.value = value;
-        emailForm.appendChild(input);
+      const response = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      document.body.appendChild(emailForm);
-      emailForm.submit();
-      window.setTimeout(() => emailForm.remove(), 1000);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (![404, 502, 503].includes(response.status)) {
+          throw new Error(result.error || "Unable to send your enquiry.");
+        }
+
+        const { error } = await supabase.from("enquiries").insert(data);
+        if (error) throw error;
+
+        const emailForm = document.createElement("form");
+        emailForm.method = "POST";
+        emailForm.action = "https://formsubmit.co/spiegelbusinessschool@gmail.com";
+        emailForm.target = "formsubmit-frame";
+        emailForm.style.display = "none";
+
+        const emailFields = {
+          ...data,
+          _replyto: data.email,
+          _subject: "New Website Enquiry - Spiegel Business School",
+          _captcha: "false",
+          _template: "table",
+        };
+        Object.entries(emailFields).forEach(([name, value]) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          input.value = value;
+          emailForm.appendChild(input);
+        });
+        document.body.appendChild(emailForm);
+        emailForm.submit();
+        window.setTimeout(() => emailForm.remove(), 1000);
+      }
 
       // Show success
       setSubmitStatus("success");
